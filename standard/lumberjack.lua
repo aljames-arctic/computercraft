@@ -84,7 +84,7 @@ local sapling =
 }
 local function planting_sapling()
   -- plant new tree
-  for i in 1, 4 do 
+  for i = 1, 4 do 
     turtle.select(SAPLING_SLOT)
     turtle.place()
     turtle.turnRight()
