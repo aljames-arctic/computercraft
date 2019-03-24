@@ -1,104 +1,136 @@
+local self = {}
 local state = dofile("/apis/state")
 local turtle = dofile("/apis/turtle")
 
+self.debug = false
+self.name = "Lumberjack.exe"
+self.running = true
+local SAPLING_SLOT = 16
+
+-- Utility Functionality --
+local logs = 
+{ 
+    ["minecraft:log"] = true,
+    ["BiomesOPlenty:logs1"] = true
+}
 local function isLog(dir)
   local item = nil
-  if dir == "front" then
-    s, item = turtle.inspect()
-  elseif dir == "up" then
-    s, item = turtle.inspectUp()
+
+  if dir == "front" then _, item = turtle.inspect()
+  elseif dir == "up" then _, item = turtle.inspectUp()
   end
 
-  return item.name == "minecraft:log"
+  if logs[item.name] then
+    return true
+  elseif item.name ~= nil and self.debug then
+    print("Found <"..item.name.."> if this is a log add to loglist")
+    return false
+  end
 end
 
-local function task()
-  while true do
-    if state.curr == 1 then
-      -- waiting for tree to grow
-      turtle.suck()
-      if isLog("front") then
-        turtle.dig()
-        state.set(2)
-      else
-        turtle.turnRight()
-        sleep(10)
-        if turtle.getFuelLevel() < 50 then
-          turtle.selectFuel()
-          turtle.refuel(10)
-        end
-      end
-    end
+-- State Machine
+local UNINITIALIZED = 0
+local WAITING_ON_TREE = 1
+local TREE_HAS_GROWN = 2
+local FELLING_TREE = 3
+local RETURN_TO_GROUND = 4
+local PLANTING_SAPLING = 5
+local END_PROGRAM = 6
 
-    if state.curr == 2 then
-      -- tree chopped -- space empty
-      turtle.move("forward")
-      state.set(3)
-    end
-
-    if state.curr == 3 then
-      -- chopping upward
-      while isLog("up") do
-        turtle.digUp()
-        turtle.move("up")
-      end
-      state.set(4)
-    end
-
-    if state.curr == 4 then
-      -- move back to initial location
-      turtle.to({"z:" .. 0, "x:" .. 0, "y:" .. 0, "f:" .. turtle.facing()})
-      state.set(5)
-    end
-
-    if state.curr == 5 then
-      -- plant new tree
-      turtle.select(16)
-      turtle.place()
-      _, item = turtle.inspect()
-      if item.name ~= "minecraft:sapling" then
-        turtle.drop()
-        print("Out of saplings -- Please provide more in slot 16")
-        turtle.select(1)
-        turtle.dig()
-        state.set(6)
-      else
-        state.set(1)
-      end
-    end
-
-    if state.curr == 6 then
-      -- no saplings left
-      repeat
-        os.pullEvent("turtle_inventory")
-      until turtle.getItemCount(16) > 0
-      state.set(5)
+-- State Machine Functions
+local function waiting_on_tree()
+  turtle.suck() -- continue to suck any saplings from previous tree
+  
+  -- check if a tree has grown, otherwise fill up fuel
+  if isLog("front") then 
+    state.set(TREE_HAS_GROWN)
+  else  -- turn right to check for more trees
+    turtle.turnRight()
+    sleep(10)
+    if turtle.getFuelLevel() < 100 then
+      turtle.selectFuel()
+      turtle.refuel(10)
     end
   end
 end
 
-local function menu()
-  while true do
-    term.clear()
-    term.setCursorPos(1,1)
-    print "Welcome to the Turtle Lumberjack"
-    print "--------------------------------"
-    print " Press Q to quit"
+local function tree_has_grown()
+  turtle.dig()            -- chop the tree
+  turtle.move("forward")  -- move forward
+  state.set(FELLING_TREE) -- dig upward until no tree
+end
 
-    local e, k = os.pullEvent("key")
+local function felling_tree()
+  -- chopping upward
+  while isLog("up") do
+    turtle.digUp()
+    turtle.move("up")
+  end
+  state.set(RETURN_TO_GROUND)
+end
 
-    os.pullEvent("char")
-    term.clear()
-    term.setCursorPos(1,1)
-
-    if k == keys.q then return end
+local function return_to_ground()
+  if state.curr == RETURN_TO_GROUND then
+    -- move back to initial location
+    turtle.to({"z:" .. 0, "x:" .. 0, "y:" .. 0, "f:" .. turtle.facing()})
+    state.set(PLANTING_SAPLING)
   end
 end
 
-state.initialize()
-if state.curr == 0 then
-  turtle.initialize()
-  state.set(1)
+local sapling =
+{
+  ["minecraft:sapling"] = true,
+  ["BiomesOPlenty:saplings"] = true
+}
+local function planting_sapling()
+  -- plant new tree
+  for i in 1, 4 do 
+    turtle.select(SAPLING_SLOT)
+    turtle.place()
+    turtle.turnRight()
+  end
+
+
+  _, item = turtle.inspect()
+  if sapling[item.name] then
+    state.set(WAITING_ON_TREE)
+    return
+  end
+  
+  if item.name ~= nil and self.debug then -- if the item we placed is not a sapling
+    print("Out of saplings, placed <"..item.name.."> instead -- Ending program")
+  elseif self.debug then 
+    print("Out of saplings, load more into slot "..SAPLING_SLOT)
+  end
+  state.set(END_PROGRAM)
 end
-parallel.waitForAny( menu, task )
-state.finalize()
+
+local function end_program()
+  -- no saplings left
+  self.running = false
+end
+
+local state_action = 
+{
+  [WAITING_ON_TREE] = function() waiting_on_tree() end,
+  [TREE_HAS_GROWN] = function() tree_has_grown() end,
+  [FELLING_TREE] = function() felling_tree() end,
+  [RETURN_TO_GROUND] = function() return_to_ground() end,
+  [PLANTING_SAPLING] = function() planting_sapling() end,
+  [END_PROGRAM] = function() end_program() end,
+}
+
+-- actual task to be run
+function self.run()
+  state.initialize()
+  if state.curr == UNINITIALIZED then
+    turtle.initialize()
+    state.set(WAITING_ON_TREE)
+  end
+
+  while self.running do state_action[state.curr]() end
+
+  state.finalize()
+end
+
+return self

@@ -294,6 +294,7 @@ local function menu()
 end
 
 state.initialize()
+slot16iscobble.name = "cobble_state"
 slot16iscobble.initialize()
 if state.curr == 0 then
   turtle.initialize()

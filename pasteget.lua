@@ -5,7 +5,7 @@ folder = {}
 github = {}
 pastebin = {}
 
-mygit = "arctivlargl/ComputerCraft/master"
+mygit = "aljames-arctic/computercraft/master"
 -- [ specify which files to download for a specific run ] --
 if iargs[1] =="chess" then
   if iargs[2] == "build" then
@@ -49,7 +49,8 @@ elseif iargs[1] == "nexus" then
   end
 elseif iargs[1] == "standard" then
   if iargs[2] == "lumberjack" then
-    table.insert(github, {name="startup", tag=mygit.."/standard/lumberjack.lua", replace=true})
+    table.insert(github, {name="active_program", tag=mygit.."/standard/lumberjack.lua", replace=true})
+    table.insert(github, {name="startup", tag=mygit.."/startup.lua", replace=true})
   elseif iargs[2] == "quarry" then
     table.insert(github, {name="startup", tag=mygit.."/standard/quarry.lua", replace=true})
   end
