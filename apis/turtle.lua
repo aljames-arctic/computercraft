@@ -22,6 +22,7 @@ local position = dofile("/apis/position")
 -- Module local variables
 --**********************************
 local SOUTH, WEST, NORTH, EAST = 0, 1, 2, 3
+self.debug = false
 
 --**********************************
 -- Some Turtle Commands No Changes
@@ -36,7 +37,14 @@ function self.equipRight()
 end
 
 function self.getSelectedSlot()
-  return turtle.getSelectedSlot()
+  if turtle.getSelectedSlot then
+    return turtle.getSelectedSlot()
+  else
+    if self.debug then
+      print("turtle.getSelectedSlot does not exist -- returning 1")
+    end
+    return 1
+  end
 end
 
 function self.select(slot)
@@ -255,10 +263,16 @@ end
 --**********************************
 -- Turtle inspect functionality
 --**********************************
+self.hasInspect = turtle.inspect ~= nil
 function self.inspect(dir)
   local s, r = nil, nil
     
   self.turn(dir)
+  if turtle.inspect == nil then
+    print("ERROR: turtle.inspect does not exist in this version")
+    print("          use turtle.compare instead")
+    turtle.inspect() -- terminate the program
+  end
 
   if dir == "up" then s, r = turtle.inspectUp()
   elseif dir == "down" then s, r = turtle.inspectDown()

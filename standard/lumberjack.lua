@@ -5,6 +5,7 @@ local turtle = dofile("/apis/turtle")
 self.debug = false
 self.name = "Lumberjack.exe"
 self.running = true
+local LOG_SLOT = 15
 local SAPLING_SLOT = 16
 
 -- Utility Functionality --
@@ -16,15 +17,21 @@ local logs =
 local function isLog(dir)
   local item = nil
 
-  if dir == "front" then _, item = turtle.inspect()
-  elseif dir == "up" then _, item = turtle.inspectUp()
-  end
+  if turtle.hasInspect then
+    if dir == "front" then _, item = turtle.inspect()
+    elseif dir == "up" then _, item = turtle.inspectUp()
+    end
 
-  if logs[item.name] then
-    return true
-  elseif item.name ~= nil and self.debug then
-    print("Found <"..item.name.."> if this is a log add to loglist")
-    return false
+    if logs[item.name] then
+      return true
+    elseif item.name ~= nil and self.debug then
+      print("Found <"..item.name.."> if this is a log add to loglist")
+      return false
+    end
+  else
+    turtle.select(LOG_SLOT)
+    is_log = turtle.compare() and (turtle.getItemCount(LOG_SLOT) > 0)
+    return is_log
   end
 end
 
@@ -55,15 +62,25 @@ local function waiting_on_tree()
 end
 
 local function tree_has_grown()
-  turtle.dig()            -- chop the tree
-  turtle.move("forward")  -- move forward
+  if turtle.hasInspect then
+    turtle.dig()            -- chop the tree
+    turtle.move("forward")  -- move forward
+  end
   state.set(FELLING_TREE) -- dig upward until no tree
 end
 
 local function felling_tree()
   -- chopping upward
   while isLog("up") do
-    turtle.digUp()
+    if turtle.hasInspect then
+      turtle.digUp()
+    elseif turtle.getItemCount(LOG_SLOT) > 0 then
+      turtle.select(LOG_SLOT)
+      if turtle.compare() then
+        turtle.dig()
+        turtle.digUp()
+      end
+    end
     turtle.move("up")
   end
   state.set(RETURN_TO_GROUND)
@@ -90,18 +107,28 @@ local function planting_sapling()
     turtle.turnRight()
   end
 
+  if turtle.hasInspect then
+    _, item = turtle.inspect()
+    if sapling[item.name] then
+      state.set(WAITING_ON_TREE)
+      return
+    end
 
-  _, item = turtle.inspect()
-  if sapling[item.name] then
-    state.set(WAITING_ON_TREE)
-    return
+    if item.name ~= nil and self.debug then -- if the item we placed is not a sapling
+      print("Out of saplings, placed <"..item.name.."> instead -- Ending program")
+    elseif self.debug then 
+      print("Out of saplings, load more into slot "..SAPLING_SLOT)
+    end
+  else
+    if turtle.getItemCount(SAPLING_SLOT) > 0 then
+      turtle.select(SAPLING_SLOT)
+      if turtle.compare() then
+        state.set(WAITING_ON_TREE)
+        return
+      end
+    end
   end
-  
-  if item.name ~= nil and self.debug then -- if the item we placed is not a sapling
-    print("Out of saplings, placed <"..item.name.."> instead -- Ending program")
-  elseif self.debug then 
-    print("Out of saplings, load more into slot "..SAPLING_SLOT)
-  end
+
   state.set(END_PROGRAM)
 end
 
