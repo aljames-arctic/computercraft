@@ -52,7 +52,8 @@ elseif iargs[1] == "standard" then
     table.insert(github, {name="active_program", tag=mygit.."/standard/lumberjack.lua", replace=true})
     table.insert(github, {name="startup", tag=mygit.."/startup.lua", replace=true})
   elseif iargs[2] == "quarry" then
-    table.insert(github, {name="startup", tag=mygit.."/standard/quarry.lua", replace=true})
+    table.insert(github, {name="active_program", tag=mygit.."/standard/quarry.lua", replace=true})
+    table.insert(github, {name="startup", tag=mygit.."/startup.lua", replace=true})
   end
 elseif iargs[1] == "miner" then
   if iargs[2] == "sphere" then
