@@ -10,7 +10,7 @@ end
 -- node has two functions, getAspectCount()
 --                         getAspects()
 
-esstable = { node.getAspects() }
+esstable = node.getAspects()
 for k,v in pairs(esstable) do
     print( tostring(k) .. ":" .. tostring(v) )
 end
