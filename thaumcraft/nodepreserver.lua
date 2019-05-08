@@ -12,7 +12,7 @@ if pmemory.add("config") then
     config = {}
     config.input = "bottom"
     config.output = "back"
-    pmemory.initialize("config", config )
+    pmemory.store("config", config )
 end
 config = pmemory.retrieve("config")
 
