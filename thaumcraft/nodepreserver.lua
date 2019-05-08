@@ -2,12 +2,10 @@
 -- Place the ComputerCraft block directly adjacent to the node
 -- Run a redstone signal from the ComputerCraft block to the Node Stabilizer
 
+local self = {}
 
 local pmemory = dofile("/apis/pmemory")
-node = peripheral.wrap("bottom")
-if node == nil then
-    print "ERROR : No node found"
-end
+local node = peripheral.wrap("bottom")
 
 -- node has two functions, getAspectCount()
 --                         getAspects()
@@ -18,6 +16,16 @@ local NODE_CHARGING = 0
 local NODE_CHARGED = 1
 
 local state = NODE_CHARGED
+
+function update_redstone()
+    if state == NODE_CHARGED then
+        rs.setOutput("back", true)  -- disable stabilizer
+    elseif state == NODE_CHARGING then
+        rs.setOutput("back", false) -- enable stabilizer
+    else
+        print("Unknown state")
+    end
+end
 
 function inspect_aspects()
     local all_maximized = true
@@ -31,10 +39,10 @@ function inspect_aspects()
         maximum = aspects[aspect]
         count = node.getAspectCount(aspect)
         if maximum < count then
-            aspects[aspect] = count     -- update the maximum
-            pmemory.store( "aspects", aspects )    -- overwrite the maximums
-        elseif count == 1 then
-            state = NODE_CHARGING       -- prevent the node from fully depleting
+            aspects[aspect] = count                 -- update the maximum
+            pmemory.store( "aspects", aspects )     -- overwrite the maximums
+        elseif count < 5 and count < maximum then   -- close to empty, if node was gaining then count == maximum on this aspect
+            state = NODE_CHARGING                   -- prevent the node from fully depleting
             return
         elseif count < maximum then
             all_maximized = false
@@ -46,14 +54,25 @@ function inspect_aspects()
     end
 end
 
-while true do
-    inspect_aspects()
+local state_action = 
+{
+  [NODE_CHARGING] = function() 
+                        inspect_aspects() 
+                        update_redstone()
+                    end,
+  [NODE_CHARGED] = function() 
+                        inspect_aspects() 
+                        update_redstone()
+                    end,
+}
 
-    if state == NODE_CHARGED then
-        rs.output("back", true)     -- deactivate the node preserver
-    elseif state == NODE_CHARGING then
-        rs.output("back", false)    -- activate the node preserver until charged again
-    end
-    
+-- actual task to be run
+function self.run()
+  self.running = true
+  while self.running do 
+    state_action[state]() 
     sleep(5)
+  end
 end
+
+return self
