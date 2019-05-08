@@ -128,6 +128,7 @@ end
 
 -- quick functions for table storage/retrieval
 function pmemory.retrieve( s )
+  pmemory.add( s )
   return pmemory.read(s, "table")
 end
 function pmemory.store( s, t )
