@@ -3,6 +3,7 @@
 -- Run a redstone signal from the ComputerCraft block to the Node Stabilizer
 
 local self = {}
+self.name = "Node Preserver"
 
 local pmemory = dofile("/apis/pmemory")
 local node = peripheral.wrap("bottom")
@@ -71,6 +72,8 @@ function self.run()
   self.running = true
   while self.running do 
     state_action[state]() 
+    term.setCursorPos(1,6)
+    print("Current State: "..tostring(state))
     sleep(5)
   end
 end
