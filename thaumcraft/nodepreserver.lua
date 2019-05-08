@@ -10,13 +10,15 @@ local pmemory = dofile("/apis/pmemory")
 -- initialize configuration options
 if pmemory.add("config") then
     config = {}
-    config.input = "bottom"
-    config.output = "back"
+    config.node_side = "front"
+    config.rs_output = "bottom"
+    config.limit = 10
+    config.sleeptime = 20
     pmemory.store("config", config )
 end
 config = pmemory.retrieve("config")
 
-local node = peripheral.wrap(config.input)
+local node = peripheral.wrap(config.node_side)
 
 -- node has two functions, getAspectCount()
 --                         getAspects()
@@ -30,9 +32,9 @@ local state = NODE_CHARGED
 
 function update_redstone()
     if state == NODE_CHARGED then
-        rs.setOutput(config.output, true)  -- disable stabilizer
+        rs.setOutput(config.rs_output, true)  -- disable stabilizer
     elseif state == NODE_CHARGING then
-        rs.setOutput(config.output, false) -- enable stabilizer
+        rs.setOutput(config.rs_output, false) -- enable stabilizer
     else
         print("Unknown state")
     end
@@ -52,7 +54,7 @@ function inspect_aspects()
         if maximum < count then
             aspects[aspect] = count                 -- update the maximum
             pmemory.store( "aspects", aspects )     -- overwrite the maximums
-        elseif count < 5 and count < maximum then   -- close to empty, if node was gaining then count == maximum on this aspect
+        elseif count < config.limit and count < maximum then   -- close to empty, if node was gaining then count == maximum on this aspect
             state = NODE_CHARGING                   -- prevent the node from fully depleting
             return
         elseif count < maximum then
@@ -84,7 +86,7 @@ function self.run()
     state_action[state]() 
     term.setCursorPos(1,6)
     print("Current State: "..tostring(state))
-    sleep(5)
+    sleep(config.sleeptime)
   end
 end
 
