@@ -6,7 +6,17 @@ local self = {}
 self.name = "Node Preserver"
 
 local pmemory = dofile("/apis/pmemory")
-local node = peripheral.wrap("bottom")
+
+-- initialize configuration options
+if pmemory.add("config") then
+    config = {}
+    config.input = "bottom"
+    config.output = "back"
+    pmemory.initialize("config", config )
+end
+config = pmemory.retrieve("config")
+
+local node = peripheral.wrap(config.input)
 
 -- node has two functions, getAspectCount()
 --                         getAspects()
@@ -20,9 +30,9 @@ local state = NODE_CHARGED
 
 function update_redstone()
     if state == NODE_CHARGED then
-        rs.setOutput("back", true)  -- disable stabilizer
+        rs.setOutput(config.output, true)  -- disable stabilizer
     elseif state == NODE_CHARGING then
-        rs.setOutput("back", false) -- enable stabilizer
+        rs.setOutput(config.output, false) -- enable stabilizer
     else
         print("Unknown state")
     end
