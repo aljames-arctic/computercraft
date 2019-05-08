@@ -7,7 +7,12 @@ pastebin = {}
 
 mygit = "aljames-arctic/computercraft/master"
 -- [ specify which files to download for a specific run ] --
-if iargs[1] =="chess" then
+if iargs[1] == "3rd_party" and iargs[2] == "quarry" then
+  table.insert(pastebin, {name="smart_quarry", tag="rpXRAZs4", replace=true})
+elseif iargs[1] == "thaumcraft" then
+  table.insert(github, {name="startup", tag=mygit.."/startup.lua", replace=true})
+  table.insert(github, {name="active_program", tag=mygit.."/thaumcraft/nodepreserver.lua", replace=true})
+elseif iargs[1] =="chess" then
   if iargs[2] == "build" then
     table.insert(github, {name="build", tag=mygit.."/chess/setup/build/board.lua", replace=true})
 
