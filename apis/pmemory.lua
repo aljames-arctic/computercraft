@@ -126,4 +126,12 @@ function pmemory.initialize(variable, value, data_type)
   end
 end
 
+-- quick functions for table storage/retrieval
+function pmemory.retrieve( s )
+  return pmemory.read(s, "table")
+end
+function pmemory.store( s, t )
+  return pmemory.write(s, t, "table")
+end
+
 return pmemory
